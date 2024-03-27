@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"sync"
 
-	"github.com/FACorreiaa/go-cobra-quiz/cmd"
 	"github.com/FACorreiaa/go-cobra-quiz/server"
 )
 
@@ -26,12 +25,16 @@ func main() {
 		}
 	}()
 
-	// start CLI
-	go func() {
-		defer wg.Done()
-		// Execute the CLI commands
-		cmd.Execute()
-	}()
+	////wait server
+	//time.Sleep(100 * time.Millisecond)
+	//
+	//wg.Add(1)
+	//// start CLI
+	//go func() {
+	//	defer wg.Done()
+	//	// Execute the CLI commands
+	//	cmd.Execute()
+	//}()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)

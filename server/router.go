@@ -1,13 +1,14 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/FACorreiaa/go-cobra-quiz/api/handler"
+	"github.com/go-chi/chi/v5"
 )
 
-func Router() http.Handler {
-	r := http.NewServeMux()
-	r.HandleFunc("/", handler.HelloHandler)
+func Router() *chi.Mux {
+	// could have just stayed with 1.22 router but chi route grouping is cool
+
+	r := chi.NewRouter()
+	r.Get("/", handler.HelloHandler)
 	return r
 }

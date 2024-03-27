@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/FACorreiaa/go-cobra-quiz/configs"
+	"github.com/FACorreiaa/go-cobra-quiz/api/handler"
 	"github.com/spf13/cobra"
 )
 
@@ -28,44 +26,59 @@ var startQuizCmd = &cobra.Command{
 	},
 }
 
-var name string
-var userNameChan = make(chan string)
-
 var setNameCmd = &cobra.Command{
 	Use:   "setname [name]",
 	Short: "Sets the user's name",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		config, _ := configs.InitConfig()
-		// name = args[0]
-		// fmt.Printf("Hello, %s! Let's start the quiz.\n", name)
-		// userNameChan <- name
-		//name := args[0]
+		// Extract the name from the command arguments
+		name := args[0]
+		fmt.Printf("Hello, %s! Let's start the quiz.\n", name)
 
-		// Make an HTTP request to the /hello endpoint of your server
-		resp, err := http.Get("http://localhost" + config.Server.Addr)
+		// Call the SetNameHandler function directly
+		err := handler.HelloHandler
 		if err != nil {
 			fmt.Printf("Error setting name: %v\n", err)
 			return
 		}
-		defer resp.Body.Close()
 
-		// Read and process the response
-		var jsonResponse map[string]string
-		if err := json.NewDecoder(resp.Body).Decode(&jsonResponse); err != nil {
-			fmt.Printf("Error decoding response: %v\n", err)
-			return
-		}
-
-		// Display the message from the response
-		message, ok := jsonResponse["message"]
-		if !ok {
-			fmt.Println("Unexpected response format")
-			return
-		}
-		fmt.Println(message)
-
+		fmt.Printf("Name set to %s\n", name)
 	},
+	//Run: func(cmd *cobra.Command, args []string) {
+	//	// Extract the name from the command arguments
+	//	name := args[0]
+	//	fmt.Printf("Hello, %s! Let's start the quiz.\n", name)
+	//
+	//	// Call the HelloHandler function directly
+	//	req, err := http.NewRequest("GET", "/", nil)
+	//	if err != nil {
+	//		fmt.Printf("Error creating HTTP request: %v\n", err)
+	//		return
+	//	}
+	//
+	//	client := &http.Client{}
+	//	resp, err := client.Do(req)
+	//	if err != nil {
+	//		fmt.Printf("Error sending HTTP request: %v\n", err)
+	//		return
+	//	}
+	//	defer resp.Body.Close()
+	//
+	//	// Decode the response
+	//	var jsonResponse map[string]string
+	//	if err := json.NewDecoder(resp.Body).Decode(&jsonResponse); err != nil {
+	//		fmt.Printf("Error decoding JSON response: %v\n", err)
+	//		return
+	//	}
+	//
+	//	// Display the message from the response
+	//	message, ok := jsonResponse["message"]
+	//	if !ok {
+	//		fmt.Println("Unexpected response format")
+	//		return
+	//	}
+	//	fmt.Println(message)
+	//},
 }
 
 func loadQuestions() []question {

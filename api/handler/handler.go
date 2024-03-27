@@ -13,7 +13,11 @@ func HelloHandler(w http.ResponseWriter, r *http.Request) {
 		// Respond with the user's name
 		jsonResponse := map[string]string{"message": fmt.Sprintf("Hello, %s!", userName)}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(jsonResponse)
+		err := json.NewEncoder(w).Encode(jsonResponse)
+		if err != nil {
+			fmt.Println("Error encoding JSON response:", err)
+			return
+		}
 		return
 	}
 	// Handle other requests
