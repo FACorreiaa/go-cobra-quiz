@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/FACorreiaa/go-cobra-quiz/api"
 	"github.com/FACorreiaa/go-cobra-quiz/configs"
 )
 
@@ -14,21 +15,25 @@ func Run(ctx context.Context) error {
 		fmt.Printf("Error initializing config: %s", err)
 		panic(err)
 	}
+	repo := api.NewRepository()
+	service := api.NewService(repo)
 
 	srv := &http.Server{
 		Addr:         config.Server.Addr + ":" + config.Server.Port,
 		WriteTimeout: config.Server.WriteTimeout,
 		ReadTimeout:  config.Server.ReadTimeout,
 		IdleTimeout:  config.Server.IdleTimeout,
-		Handler:      Logger(Router()), // Router(),
+		Handler:      Logger(Router(service)), // Router(),
 	}
 
 	go func() {
 		fmt.Printf("Starting server %s on port %s\n", config.Server.Addr, config.Server.Port)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil {
 			fmt.Println("ListenAndServe error:", err)
 		}
 	}()
+
+	InitPprof(config.Pprof.Addr, config.Pprof.Port)
 
 	// select {
 	// case userName = <-userNameChan:

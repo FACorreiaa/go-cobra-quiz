@@ -11,3 +11,6 @@ server:
 cli:
   addr: "localhost"
   port: "4040"
+pprof:
+  addr: "localhost"
+  port: "5050"

@@ -21,6 +21,10 @@ type Config struct {
 		Addr string `mapstructure:"addr"`
 		Port string `mapstructure:"port"`
 	}
+	Pprof struct {
+		Addr string `mapstructure:"addr"`
+		Port string `mapstructure:"port"`
+	}
 }
 
 func InitConfig() (Config, error) {
