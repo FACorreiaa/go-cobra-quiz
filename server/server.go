@@ -16,19 +16,26 @@ func Run(ctx context.Context) error {
 	}
 
 	srv := &http.Server{
-		Addr:         config.Server.Addr,
+		Addr:         config.Server.Addr + ":" + config.Server.Port,
 		WriteTimeout: config.Server.WriteTimeout,
 		ReadTimeout:  config.Server.ReadTimeout,
 		IdleTimeout:  config.Server.IdleTimeout,
-		Handler:      Router(),
+		Handler:      Logger(Router()), // Router(),
 	}
 
 	go func() {
-		fmt.Println("Starting server " + config.Server.Addr)
+		fmt.Printf("Starting server %s on port %s\n", config.Server.Addr, config.Server.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			fmt.Println("ListenAndServe error:", err)
 		}
 	}()
+
+	// select {
+	// case userName = <-userNameChan:
+	// 	// Continue starting the server
+	// case <-ctx.Done():
+	// 	return nil
+	// }
 
 	<-ctx.Done()
 

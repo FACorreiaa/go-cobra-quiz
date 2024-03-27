@@ -2,20 +2,20 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
-func HelloHandler(w http.ResponseWriter, r *http.Request) {
-	response := map[string]string{"message": "Hello, World!"}
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, err = w.Write(jsonResponse)
-	if err != nil {
-		return
-	}
+var userName string
 
+func HelloHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		// Respond with the user's name
+		jsonResponse := map[string]string{"message": fmt.Sprintf("Hello, %s!", userName)}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(jsonResponse)
+		return
+	}
+	// Handle other requests
+	http.NotFound(w, r)
 }

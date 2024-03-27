@@ -11,11 +11,16 @@ type Config struct {
 	Dotenv string `mapstructure:"dotenv"`
 	Server struct {
 		Addr            string        `mapstructure:"addr"`
+		Port            string        `mapstructure:"port"`
 		WriteTimeout    time.Duration `mapstructure:"write_timeout"`
 		ReadTimeout     time.Duration `mapstructure:"read_timeout"`
 		IdleTimeout     time.Duration `mapstructure:"idle_timeout"`
 		GracefulTimeout time.Duration `mapstructure:"graceful_timeout"`
 	} `mapstructure:"server"`
+	CLI struct {
+		Addr string `mapstructure:"addr"`
+		Port string `mapstructure:"port"`
+	}
 }
 
 func InitConfig() (Config, error) {
