@@ -3,12 +3,15 @@ package api
 import "github.com/google/uuid"
 
 type Session struct {
-	ID uuid.UUID `json:"id"`
+	ID   uuid.UUID `json:"id"`
+	User []User
 }
 
 type User struct {
-	ID   uuid.UUID `json:"id"`
-	Name string    `json:"name"`
+	ID      uuid.UUID `json:"id"`
+	Name    string    `json:"name"`
+	Answers []Answer  `json:"answers"`
+	Score   int       `json:"score"`
 }
 
 type Question struct {
@@ -18,20 +21,9 @@ type Question struct {
 	Correct int      `json:"correct"`
 }
 
-type Response struct {
-	UserID   int `json:"user_id"`
-	Question int `json:"question"`
-	Answer   int `json:"answer"`
-}
-
-type QuizResponse struct {
-	UserID  int      `json:"user_id"`
-	Answers []Answer `json:"answers"`
-}
-
 type Answer struct {
 	QuestionID int    `json:"question_id"`
-	Response   string `json:"response"`
+	Answer     string `json:"answer"`
 }
 
 type MultipleChoiceQuestion struct {
@@ -43,7 +35,6 @@ type MultipleChoiceQuestion struct {
 	Explanation string   `json:"explanation,omitempty"`
 }
 
-// MultipleChoiceQuestions are questions from javaguides.net
 var MultipleChoiceQuestions = []MultipleChoiceQuestion{
 	{
 		ID:          1,
@@ -89,8 +80,8 @@ var MultipleChoiceQuestions = []MultipleChoiceQuestion{
 	{
 		ID:          7,
 		Text:        "What is the largest planet in the solar system?",
-		Options:     []string{"Earth", "Mars", "Jupiter", "Saturn"},
-		CorrectAns:  "Jupiter",
+		Options:     []string{"A. Earth", "B. Mars", "C. Jupiter", "D. Saturn"},
+		CorrectAns:  "C. Jupiter",
 		Explanation: "Jupiter is the largest planet in the solar system.",
 	},
 	{

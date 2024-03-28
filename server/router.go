@@ -12,9 +12,14 @@ func Router(s *api.Service) *chi.Mux {
 
 	r := chi.NewRouter()
 
-	r.Post("/session", h.StartSession)
-	r.Post("/set-name/{user_id}", h.SetName)
-	//
+	r.Route("/session", func(r chi.Router) {
+		r.Post("/", h.StartSession)
+		r.Post("/set-name/{user_id}", h.SetName)
+		r.Post("/{user_id}/submit-quiz", h.SubmitQuiz)
+		r.Get("/ranking", h.GetRanking)
+	})
+
+	r.Get("/quiz/list", h.GetAllScores)
 
 	return r
 }

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/FACorreiaa/go-cobra-quiz/api/handler"
 	"github.com/spf13/cobra"
 )
 
@@ -36,11 +35,11 @@ var setNameCmd = &cobra.Command{
 		fmt.Printf("Hello, %s! Let's start the quiz.\n", name)
 
 		// Call the SetNameHandler function directly
-		err := handler.HelloHandler
-		if err != nil {
-			fmt.Printf("Error setting name: %v\n", err)
-			return
-		}
+		//err := handler.HelloHandler
+		//if err != nil {
+		//	fmt.Printf("Error setting name: %v\n", err)
+		//	return
+		//}
 
 		fmt.Printf("Name set to %s\n", name)
 	},
@@ -112,13 +111,11 @@ func startQuiz() {
 			var ans int
 			fmt.Print("Your answer: ")
 			fmt.Scanln(&ans)
-			// Send response to channel
 			responses <- response{question: q, answer: ans}
 		}
 		close(responses) // Close the channel after all questions are answered
 	}()
 
-	// Process responses
 	var score int
 	for r := range responses {
 		if r.question.correctOption == r.answer {
@@ -126,6 +123,5 @@ func startQuiz() {
 		}
 	}
 
-	// Display score
 	fmt.Printf("Your score: %d out of %d\n", score, len(questions))
 }
