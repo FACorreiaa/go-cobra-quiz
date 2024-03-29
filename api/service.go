@@ -14,31 +14,31 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) AddUser(user User) error {
-	return s.repo.AddUser(user)
+func (s *Service) addUser(user User) error {
+	return s.repo.addUser(user)
 }
 
-func (s *Service) GenerateUserID(user User) (User, error) {
-	return s.repo.GenerateUserID(user)
+func (s *Service) generateUserID(user User) (User, error) {
+	return s.repo.generateUserID(user)
 }
 
-func (s *Service) GenerateSessionID(session Session) (Session, error) {
-	return s.repo.GenerateSessionID(session)
+func (s *Service) generateSessionID(session Session) (Session, error) {
+	return s.repo.generateSessionID(session)
 }
 
-func (s *Service) GetUserByID(id uuid.UUID) (*User, error) {
-	return s.repo.GetUserByID(id)
+func (s *Service) getUserByID(id uuid.UUID) (*User, error) {
+	return s.repo.getUserByID(id)
 }
 
-func (s *Service) UpdateUserName(userID uuid.UUID, newName string) error {
-	user, err := s.repo.GetUserByID(userID)
+func (s *Service) updateUserName(userID uuid.UUID, newName string) error {
+	user, err := s.repo.getUserByID(userID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve user: %v", err)
 	}
 
 	user.Name = newName
 
-	err = s.repo.UpdateUser(user)
+	err = s.repo.updateUser(user)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %v", err)
 	}
@@ -46,16 +46,16 @@ func (s *Service) UpdateUserName(userID uuid.UUID, newName string) error {
 	return nil
 }
 
-func (s *Service) GetUsers() ([]User, error) {
-	return s.repo.GetUsers()
+func (s *Service) getUsers() ([]User, error) {
+	return s.repo.getUsers()
 }
 
-func (s *Service) UpdateUserScore(user *User, score int) error {
+func (s *Service) updateUserScore(user *User, score int) error {
 	// Update the user's score
 	user.Score = score
 
 	// Call the repository method to save the updated user information
-	if err := s.repo.UpdateUser(user); err != nil {
+	if err := s.repo.updateUser(user); err != nil {
 		return err
 	}
 
@@ -80,7 +80,20 @@ func (s *Service) findQuestionByID(id int) *MultipleChoiceQuestion {
 	return nil
 }
 
-func (u *User) HasAnswered(questionID int) bool {
+func (s *Service) calculateUserPercent(user []User, score int) float64 {
+	var higherScores int
+	for _, u := range user {
+		if u.Score > score {
+			higherScores++
+		}
+	}
+
+	totalUsers := len(user)
+	percentile := (float64(higherScores) / float64(totalUsers)) * 100
+	return percentile
+}
+
+func (u *User) hasAnswered(questionID int) bool {
 	for _, ans := range u.Answers {
 		if ans.QuestionID == questionID {
 			return true

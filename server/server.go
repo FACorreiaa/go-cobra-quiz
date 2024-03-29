@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/FACorreiaa/go-cobra-quiz/api"
 	"github.com/FACorreiaa/go-cobra-quiz/configs"
@@ -19,11 +20,12 @@ func Run(ctx context.Context) error {
 	service := api.NewService(repo)
 
 	srv := &http.Server{
-		Addr:         config.Server.Addr + ":" + config.Server.Port,
-		WriteTimeout: config.Server.WriteTimeout,
-		ReadTimeout:  config.Server.ReadTimeout,
-		IdleTimeout:  config.Server.IdleTimeout,
-		Handler:      Logger(Router(service)), // Router(),
+		Addr:              config.Server.Addr + ":" + config.Server.Port,
+		ReadHeaderTimeout: 3 * time.Second,
+		WriteTimeout:      config.Server.WriteTimeout,
+		ReadTimeout:       config.Server.ReadTimeout,
+		IdleTimeout:       config.Server.IdleTimeout,
+		Handler:           Logger(Router(service)),
 	}
 
 	go func() {
@@ -33,14 +35,11 @@ func Run(ctx context.Context) error {
 		}
 	}()
 
-	InitPprof(config.Pprof.Addr, config.Pprof.Port)
-
-	// select {
-	// case userName = <-userNameChan:
-	// 	// Continue starting the server
-	// case <-ctx.Done():
-	// 	return nil
-	// }
+	err = InitPprof(config.Pprof.Addr, config.Pprof.Port)
+	if err != nil {
+		fmt.Printf("Error initializing pprof config: %s", err)
+		panic(err)
+	}
 
 	<-ctx.Done()
 

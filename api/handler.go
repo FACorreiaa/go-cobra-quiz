@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -23,19 +24,19 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 	var user User
 	var session Session
 
-	user, err := h.service.GenerateUserID(user)
+	user, err := h.service.generateUserID(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = h.service.AddUser(user)
+	err = h.service.addUser(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session, err = h.service.GenerateSessionID(session)
+	session, err = h.service.generateSessionID(session)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -43,15 +44,14 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 
 	userID := user.ID
 	sessionID := session.ID
-	fmt.Printf("User ID: %v\n", userID)
+
 	response := struct {
 		UserID    uuid.UUID `json:"user_id"`
 		SessionID uuid.UUID `json:"session_id"`
 	}{UserID: userID, SessionID: sessionID}
 
 	w.Header().Set("Content-Type", "application/json")
-
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,7 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.UpdateUserName(userID, newName.Name); err != nil {
+	if err := h.service.updateUserName(userID, newName.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -90,12 +90,12 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
+
 }
 
-// SubmitQuiz work on this later
 func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body to get the user's answers
+
 	var userAnswers map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&userAnswers); err != nil {
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
@@ -108,57 +108,30 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-	user, err := h.service.GetUserByID(userID)
+	user, err := h.service.getUserByID(userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	var score, correctAnswers int
-	for id, answer := range userAnswers {
-		questionID, err := strconv.Atoi(id)
-		if err != nil {
-			http.Error(w, "Invalid question ID", http.StatusBadRequest)
-			return
-		}
-		question := h.service.findQuestionByID(questionID)
-		if question == nil {
-			http.Error(w, "Question not found", http.StatusNotFound)
-			return
-		}
-		if user.HasAnswered(question.ID) {
-			http.Error(w, "User has already answered this question", http.StatusBadRequest)
-			return
-		}
-		if h.service.isValidAnswer(answer, question.Options) {
-			correctAnswers++
-		}
-		user.Answers = append(user.Answers, Answer{QuestionID: question.ID, Answer: answer})
+	score, correctAnswers, err := h.processUserAnswers(userAnswers, user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	// Calculate the score
-	score = correctAnswers * 10
-
-	// Update user's score
-	if err := h.service.UpdateUserScore(user, score); err != nil {
+	if err := h.service.updateUserScore(user, score); err != nil {
 		http.Error(w, "Failed to save user information", http.StatusInternalServerError)
 		return
 	}
 
-	//calculate user percentile
-	usersWithAnswers, err := h.service.GetUsers()
+	usersWithAnswers, err := h.service.getUsers()
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
 	}
-	var higherScores int
-	for _, u := range usersWithAnswers {
-		if u.Score > score {
-			higherScores++
-		}
-	}
-	totalUsers := len(usersWithAnswers)
-	percentile := (float64(higherScores) / float64(totalUsers)) * 100
+
+	percentile := h.service.calculateUserPercent(usersWithAnswers, score)
 
 	response := struct {
 		Score          int     `json:"score"`
@@ -171,11 +144,34 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
+}
+
+func (h *Handler) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
+	var score, correctAnswers int
+	for id, answer := range userAnswers {
+		questionID, err := strconv.Atoi(id)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid question ID: %v", err)
+		}
+		question := h.service.findQuestionByID(questionID)
+		if question == nil {
+			return 0, 0, fmt.Errorf("question not found")
+		}
+		if user.hasAnswered(question.ID) {
+			return 0, 0, errors.New("user has already answered this question")
+		}
+		if h.service.isValidAnswer(answer, question.Options) {
+			correctAnswers++
+		}
+		user.Answers = append(user.Answers, Answer{QuestionID: question.ID, Answer: answer})
+	}
+	score = correctAnswers * 10
+	return score, correctAnswers, nil
 }
 
 func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.GetUsers()
+	usersWithAnswers, err := h.service.getUsers()
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
@@ -193,15 +189,12 @@ func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(jsonResponse)
-	if err != nil {
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		return
-	}
+	_, _ = w.Write(jsonResponse)
+
 }
 
 func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.GetUsers()
+	usersWithAnswers, err := h.service.getUsers()
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
@@ -238,9 +231,5 @@ func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(jsonResponse)
-	if err != nil {
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		return
-	}
+	_, _ = w.Write(jsonResponse)
 }
