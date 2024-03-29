@@ -1,7 +1,9 @@
 package api
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/google/uuid"
 )
@@ -27,12 +29,18 @@ type IUserRepository interface {
 	createUser(user User) error
 }
 
-type Repository struct {
-	User IUserRepository
+type IQuizRepository interface {
+	findQuestionByID(id int) *MultipleChoiceQuestion
+	processUserAnswers(userAnswers map[string]string, user *User) (int, int, error)
 }
 
-func NewRepository() *Repository {
-	return &Repository{
+type RepositoryStore struct {
+	User IUserRepository
+	Quiz IQuizRepository
+}
+
+func NewRepositoryStore() *RepositoryStore {
+	return &RepositoryStore{
 		User: NewUserRepository(),
 	}
 }
@@ -85,5 +93,37 @@ func (r *UserRepository) createUser(user User) error {
 	// Add the user to the repository
 	r.users[user.ID] = &user
 
+	return nil
+}
+
+func (r *UserRepository) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
+	var score, correctAnswers int
+	for id, answer := range userAnswers {
+		questionID, err := strconv.Atoi(id)
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid question ID: %v", err)
+		}
+		question := r.findQuestionByID(questionID)
+		if question == nil {
+			return 0, 0, fmt.Errorf("question not found")
+		}
+		if user.hasAnswered(question.ID) {
+			return 0, 0, errors.New("user has already answered this question")
+		}
+		if answer == question.CorrectAns { // Check if user's answer matches the correct answer
+			correctAnswers++
+		}
+		user.Answers = append(user.Answers, Answer{QuestionID: question.ID, Answer: answer})
+	}
+	score = correctAnswers * 10
+	return score, correctAnswers, nil
+}
+
+func (r *UserRepository) findQuestionByID(id int) *MultipleChoiceQuestion {
+	for _, q := range MultipleChoiceQuestions {
+		if q.ID == id {
+			return &q
+		}
+	}
 	return nil
 }

@@ -16,8 +16,8 @@ func Run(ctx context.Context) error {
 		fmt.Printf("Error initializing config: %s", err)
 		panic(err)
 	}
-	repo := api.NewRepository()
-	service := api.NewQuizService(repo)
+	repo := api.NewRepositoryStore()
+	service := api.NewServiceStore(repo)
 
 	srv := &http.Server{
 		Addr:              config.Server.Addr + ":" + config.Server.Port,

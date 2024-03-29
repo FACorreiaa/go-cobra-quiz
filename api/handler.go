@@ -1,22 +1,21 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"sort"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 type Handler struct {
-	service *ServiceUser
+	service *ServiceStore
 }
 
-func NewHandler(s *ServiceUser) *Handler {
+func NewHandler(s *ServiceStore) *Handler {
 	return &Handler{service: s}
 }
 
@@ -42,13 +41,14 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := user.ID
-	sessionID := session.ID
+	ctx := context.WithValue(r.Context(), "sessionID", session.ID)
 
 	response := struct {
 		UserID    uuid.UUID `json:"user_id"`
 		SessionID uuid.UUID `json:"session_id"`
-	}{UserID: userID, SessionID: sessionID}
+	}{UserID: user.ID, SessionID: session.ID}
+
+	h.SetName(w, r.WithContext(ctx))
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
@@ -57,6 +57,8 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	userIDParam := chi.URLParam(r, "user_id")
 	userID, err := uuid.Parse(userIDParam)
+	sessionID := r.Context().Value("sessionID").(uuid.UUID)
+
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
@@ -82,11 +84,13 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := struct {
-		UserID   uuid.UUID `json:"user_id"`
-		Username string    `json:"username"`
+		SessionID uuid.UUID `json:"session_id"`
+		UserID    uuid.UUID `json:"user_id"`
+		Username  string    `json:"username"`
 	}{
-		UserID:   userID,
-		Username: newName.Name,
+		SessionID: sessionID,
+		UserID:    userID,
+		Username:  newName.Name,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -114,7 +118,7 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	score, correctAnswers, err := h.processUserAnswers(userAnswers, user)
+	score, correctAnswers, err := h.service.Quiz.processUserAnswers(userAnswers, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -148,29 +152,6 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
-}
-
-func (h *Handler) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
-	var score, correctAnswers int
-	for id, answer := range userAnswers {
-		questionID, err := strconv.Atoi(id)
-		if err != nil {
-			return 0, 0, fmt.Errorf("invalid question ID: %v", err)
-		}
-		question := h.service.Quiz.findQuestionByID(questionID)
-		if question == nil {
-			return 0, 0, fmt.Errorf("question not found")
-		}
-		if user.hasAnswered(question.ID) {
-			return 0, 0, errors.New("user has already answered this question")
-		}
-		if answer == question.CorrectAns { // Check if user's answer matches the correct answer
-			correctAnswers++
-		}
-		user.Answers = append(user.Answers, Answer{QuestionID: question.ID, Answer: answer})
-	}
-	score = correctAnswers * 10
-	return score, correctAnswers, nil
 }
 
 func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {

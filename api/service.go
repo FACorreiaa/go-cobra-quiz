@@ -7,10 +7,10 @@ import (
 )
 
 type Service struct {
-	repo *Repository
+	repo *RepositoryStore
 }
 
-func NewService(repo *Repository) *Service {
+func NewService(repo *RepositoryStore) *Service {
 	return &Service{repo: repo}
 }
 
@@ -22,6 +22,7 @@ type ISession interface {
 
 type IQuiz interface {
 	findQuestionByID(id int) *MultipleChoiceQuestion
+	processUserAnswers(userAnswers map[string]string, user *User) (int, int, error)
 }
 
 type IRanking interface {
@@ -37,15 +38,15 @@ type IUser interface {
 	calculateUserPercent(user []User, score int) float64
 }
 
-type ServiceUser struct {
+type ServiceStore struct {
 	User    IUser
 	Session ISession
 	Quiz    IQuiz
 	Ranking IRanking
 }
 
-func NewQuizService(repo *Repository) *ServiceUser {
-	return &ServiceUser{
+func NewServiceStore(repo *RepositoryStore) *ServiceStore {
+	return &ServiceStore{
 		User:    NewService(repo),
 		Session: NewService(repo),
 		Quiz:    NewService(repo),
@@ -104,12 +105,7 @@ func (s *Service) updateUserScore(user *User, score int) error {
 }
 
 func (s *Service) findQuestionByID(id int) *MultipleChoiceQuestion {
-	for _, q := range MultipleChoiceQuestions {
-		if q.ID == id {
-			return &q
-		}
-	}
-	return nil
+	return s.repo.Quiz.findQuestionByID(id)
 }
 
 func (s *Service) calculateUserPercent(user []User, score int) float64 {
@@ -135,6 +131,9 @@ func (s *Service) calculateUserPercent(user []User, score int) float64 {
 	return percentile
 }
 
+func (s *Service) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
+	return s.repo.Quiz.processUserAnswers(userAnswers, user)
+}
 func (u *User) hasAnswered(questionID int) bool {
 	for _, ans := range u.Answers {
 		if ans.QuestionID == questionID {
