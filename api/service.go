@@ -14,22 +14,20 @@ func NewService(repo *RepositoryStore) *Service {
 	return &Service{repo: repo}
 }
 
-// ISession I woulnd't usually name ISession but since im
-// doing everything on this file, it gets easier to understand
-type ISession interface {
+type SessionService interface {
 	generateSessionID(session Session) (Session, error)
 }
 
-type IQuiz interface {
+type QuizService interface {
 	findQuestionByID(id int) *MultipleChoiceQuestion
 	processUserAnswers(userAnswers map[string]string, user *User) (int, int, error)
 }
 
-type IRanking interface {
+type RankingService interface {
 	getUsersResults() ([]User, error)
 }
 
-type IUser interface {
+type UserService interface {
 	createUser(user User) error
 	generateUserID(user User) (User, error)
 	getUserByID(id uuid.UUID) (*User, error)
@@ -39,10 +37,10 @@ type IUser interface {
 }
 
 type ServiceStore struct {
-	User    IUser
-	Session ISession
-	Quiz    IQuiz
-	Ranking IRanking
+	User    UserService
+	Session SessionService
+	Quiz    QuizService
+	Ranking RankingService
 }
 
 func NewServiceStore(repo *RepositoryStore) *ServiceStore {
@@ -134,6 +132,7 @@ func (s *Service) calculateUserPercent(user []User, score int) float64 {
 func (s *Service) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
 	return s.repo.Quiz.processUserAnswers(userAnswers, user)
 }
+
 func (u *User) hasAnswered(questionID int) bool {
 	for _, ans := range u.Answers {
 		if ans.QuestionID == questionID {

@@ -20,7 +20,7 @@ func NewUserRepository() *UserRepository {
 	}
 }
 
-type IUserRepository interface {
+type UserServiceRepository interface {
 	generateUserID(user User) (User, error)
 	generateSessionID(session Session) (Session, error)
 	getUserByID(id uuid.UUID) (*User, error)
@@ -29,14 +29,14 @@ type IUserRepository interface {
 	createUser(user User) error
 }
 
-type IQuizRepository interface {
+type QuizServiceRepository interface {
 	findQuestionByID(id int) *MultipleChoiceQuestion
 	processUserAnswers(userAnswers map[string]string, user *User) (int, int, error)
 }
 
 type RepositoryStore struct {
-	User IUserRepository
-	Quiz IQuizRepository
+	User UserServiceRepository
+	Quiz QuizServiceRepository
 }
 
 func NewRepositoryStore() *RepositoryStore {
