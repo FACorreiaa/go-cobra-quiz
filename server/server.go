@@ -21,7 +21,7 @@ func Run(ctx context.Context) error {
 
 	srv := &http.Server{
 		Addr:              config.Server.Addr + ":" + config.Server.Port,
-		ReadHeaderTimeout: 3 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
 		WriteTimeout:      config.Server.WriteTimeout,
 		ReadTimeout:       config.Server.ReadTimeout,
 		IdleTimeout:       config.Server.IdleTimeout,

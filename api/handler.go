@@ -132,15 +132,18 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	percentile := h.service.calculateUserPercent(usersWithAnswers, score)
+	percentileMessage := fmt.Sprintf("You are better than %.2f%% of users who already submitted their quiz", percentile)
 
 	response := struct {
 		Score          int     `json:"score"`
 		CorrectAnswers int     `json:"correct_answers"`
 		Percentile     float64 `json:"percentile"`
+		Message        string  `json:"message"`
 	}{
 		Score:          score,
 		CorrectAnswers: correctAnswers,
 		Percentile:     percentile,
+		Message:        percentileMessage,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -161,7 +164,7 @@ func (h *Handler) processUserAnswers(userAnswers map[string]string, user *User) 
 		if user.hasAnswered(question.ID) {
 			return 0, 0, errors.New("user has already answered this question")
 		}
-		if h.service.isValidAnswer(answer, question.Options) {
+		if answer == question.CorrectAns { // Check if user's answer matches the correct answer
 			correctAnswers++
 		}
 		user.Answers = append(user.Answers, Answer{QuestionID: question.ID, Answer: answer})

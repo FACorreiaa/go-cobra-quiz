@@ -81,15 +81,24 @@ func (s *Service) findQuestionByID(id int) *MultipleChoiceQuestion {
 }
 
 func (s *Service) calculateUserPercent(user []User, score int) float64 {
-	var higherScores int
+	var betterUsers int
 	for _, u := range user {
 		if u.Score > score {
-			higherScores++
+			betterUsers++
 		}
 	}
 
 	totalUsers := len(user)
-	percentile := (float64(higherScores) / float64(totalUsers)) * 100
+	if totalUsers == 1 {
+		return 100
+	}
+
+	if betterUsers == 0 {
+		return 100
+	}
+
+	percentile := float64(betterUsers) / float64(totalUsers) * 100
+
 	return percentile
 }
 
