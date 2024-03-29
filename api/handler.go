@@ -13,10 +13,10 @@ import (
 )
 
 type Handler struct {
-	service *Service
+	service *ServiceUser
 }
 
-func NewHandler(s *Service) *Handler {
+func NewHandler(s *ServiceUser) *Handler {
 	return &Handler{service: s}
 }
 
@@ -24,19 +24,19 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 	var user User
 	var session Session
 
-	user, err := h.service.generateUserID(user)
+	user, err := h.service.User.generateUserID(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = h.service.addUser(user)
+	err = h.service.User.createUser(user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session, err = h.service.generateSessionID(session)
+	session, err = h.service.Session.generateSessionID(session)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -76,7 +76,7 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.updateUserName(userID, newName.Name); err != nil {
+	if err := h.service.User.updateUserName(userID, newName.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -108,7 +108,7 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-	user, err := h.service.getUserByID(userID)
+	user, err := h.service.User.getUserByID(userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -120,18 +120,18 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.updateUserScore(user, score); err != nil {
+	if err := h.service.User.updateUserScore(user, score); err != nil {
 		http.Error(w, "Failed to save user information", http.StatusInternalServerError)
 		return
 	}
 
-	usersWithAnswers, err := h.service.getUsers()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults()
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
 	}
 
-	percentile := h.service.calculateUserPercent(usersWithAnswers, score)
+	percentile := h.service.User.calculateUserPercent(usersWithAnswers, score)
 	percentileMessage := fmt.Sprintf("You are better than %.2f%% of users who already submitted their quiz", percentile)
 
 	response := struct {
@@ -157,7 +157,7 @@ func (h *Handler) processUserAnswers(userAnswers map[string]string, user *User) 
 		if err != nil {
 			return 0, 0, fmt.Errorf("invalid question ID: %v", err)
 		}
-		question := h.service.findQuestionByID(questionID)
+		question := h.service.Quiz.findQuestionByID(questionID)
 		if question == nil {
 			return 0, 0, fmt.Errorf("question not found")
 		}
@@ -174,7 +174,7 @@ func (h *Handler) processUserAnswers(userAnswers map[string]string, user *User) 
 }
 
 func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.getUsers()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults()
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
@@ -197,7 +197,7 @@ func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.getUsers()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults()
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return

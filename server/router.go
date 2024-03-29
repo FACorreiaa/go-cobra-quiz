@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func Router(s *api.Service) *chi.Mux {
+func Router(s *api.ServiceUser) *chi.Mux {
 	// could have just stayed with 1.22 router but used chi group routing
 	h := api.NewHandler(s)
 

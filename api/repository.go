@@ -6,31 +6,50 @@ import (
 	"github.com/google/uuid"
 )
 
-type Repository struct {
+type UserRepository struct {
 	users     map[uuid.UUID]*User
 	questions []Question
 }
 
-func NewRepository() *Repository {
-	return &Repository{
+func NewUserRepository() *UserRepository {
+	return &UserRepository{
 		users:     make(map[uuid.UUID]*User),
 		questions: []Question{},
 	}
 }
 
-func (r *Repository) generateUserID(user User) (User, error) {
+type IUserRepository interface {
+	generateUserID(user User) (User, error)
+	generateSessionID(session Session) (Session, error)
+	getUserByID(id uuid.UUID) (*User, error)
+	getUsersResults() ([]User, error)
+	updateUser(user *User) error
+	createUser(user User) error
+}
+
+type Repository struct {
+	User IUserRepository
+}
+
+func NewRepository() *Repository {
+	return &Repository{
+		User: NewUserRepository(),
+	}
+}
+
+func (r *UserRepository) generateUserID(user User) (User, error) {
 	// Save the user in the repository
 	user.ID = uuid.New()
 	return user, nil
 }
 
-func (r *Repository) generateSessionID(session Session) (Session, error) {
+func (r *UserRepository) generateSessionID(session Session) (Session, error) {
 	// Save the user in the repository
 	session.ID = uuid.New()
 	return session, nil
 }
 
-func (r *Repository) getUserByID(id uuid.UUID) (*User, error) {
+func (r *UserRepository) getUserByID(id uuid.UUID) (*User, error) {
 	user, ok := r.users[id]
 	if !ok {
 		return nil, fmt.Errorf("user not found")
@@ -39,7 +58,7 @@ func (r *Repository) getUserByID(id uuid.UUID) (*User, error) {
 	return &userCopy, nil
 }
 
-func (r *Repository) getUsers() ([]User, error) {
+func (r *UserRepository) getUsersResults() ([]User, error) {
 	var users []User
 	for _, u := range r.users {
 		users = append(users, *u)
@@ -47,7 +66,7 @@ func (r *Repository) getUsers() ([]User, error) {
 	return users, nil
 }
 
-func (r *Repository) updateUser(user *User) error {
+func (r *UserRepository) updateUser(user *User) error {
 	_, ok := r.users[user.ID]
 	if !ok {
 		return fmt.Errorf("user not found")
@@ -56,7 +75,7 @@ func (r *Repository) updateUser(user *User) error {
 	return nil
 }
 
-func (r *Repository) addUser(user User) error {
+func (r *UserRepository) createUser(user User) error {
 	// Check if the user already exists
 	_, ok := r.users[user.ID]
 	if ok {

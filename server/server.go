@@ -17,7 +17,7 @@ func Run(ctx context.Context) error {
 		panic(err)
 	}
 	repo := api.NewRepository()
-	service := api.NewService(repo)
+	service := api.NewQuizService(repo)
 
 	srv := &http.Server{
 		Addr:              config.Server.Addr + ":" + config.Server.Port,
