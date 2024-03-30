@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 
+	"context"
+
 	"github.com/google/uuid"
 )
 
@@ -15,25 +17,25 @@ func NewService(repo *RepositoryStore) *Service {
 }
 
 type SessionService interface {
-	generateSessionID(session Session) (Session, error)
+	generateSessionID(ctx context.Context, session Session) (Session, error)
 }
 
 type QuizService interface {
-	findQuestionByID(id int) *MultipleChoiceQuestion
-	processUserAnswers(userAnswers map[string]string, user *User) (int, int, error)
+	findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
+	processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
 }
 
 type RankingService interface {
-	getUsersResults() ([]User, error)
+	getUsersResults(ctx context.Context) ([]User, error)
 }
 
 type UserService interface {
-	createUser(user User) error
-	generateUserID(user User) (User, error)
-	getUserByID(id uuid.UUID) (*User, error)
-	updateUserName(userID uuid.UUID, newName string) error
-	updateUserScore(user *User, score int) error
-	calculateUserPercent(user []User, score int) float64
+	createUser(ctx context.Context, user User) error
+	generateUserID(ctx context.Context, user User) (User, error)
+	getUserByID(ctx context.Context, id uuid.UUID) (*User, error)
+	updateUserName(ctx context.Context, userID uuid.UUID, newName string) error
+	updateUserScore(ctx context.Context, user *User, score int) error
+	calculateUserPercent(ctx context.Context, user []User, score int) float64
 }
 
 type ServiceStore struct {
@@ -54,31 +56,31 @@ func NewServiceStore(repo *RepositoryStore) *ServiceStore {
 
 // Implementation would generally be on a different file
 
-func (s *Service) createUser(user User) error {
-	return s.repo.User.createUser(user)
+func (s *Service) createUser(ctx context.Context, user User) error {
+	return s.repo.User.createUser(ctx, user)
 }
 
-func (s *Service) generateUserID(user User) (User, error) {
-	return s.repo.User.generateUserID(user)
+func (s *Service) generateUserID(ctx context.Context, user User) (User, error) {
+	return s.repo.User.generateUserID(ctx, user)
 }
 
-func (s *Service) generateSessionID(session Session) (Session, error) {
-	return s.repo.User.generateSessionID(session)
+func (s *Service) generateSessionID(ctx context.Context, session Session) (Session, error) {
+	return s.repo.User.generateSessionID(ctx, session)
 }
 
-func (s *Service) getUserByID(id uuid.UUID) (*User, error) {
-	return s.repo.User.getUserByID(id)
+func (s *Service) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
+	return s.repo.User.getUserByID(ctx, id)
 }
 
-func (s *Service) updateUserName(userID uuid.UUID, newName string) error {
-	user, err := s.repo.User.getUserByID(userID)
+func (s *Service) updateUserName(ctx context.Context, userID uuid.UUID, newName string) error {
+	user, err := s.repo.User.getUserByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve user: %v", err)
 	}
 
 	user.Name = newName
 
-	err = s.repo.User.updateUser(user)
+	err = s.repo.User.updateUser(ctx, user)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %v", err)
 	}
@@ -86,27 +88,27 @@ func (s *Service) updateUserName(userID uuid.UUID, newName string) error {
 	return nil
 }
 
-func (s *Service) getUsersResults() ([]User, error) {
-	return s.repo.User.getUsersResults()
+func (s *Service) getUsersResults(ctx context.Context) ([]User, error) {
+	return s.repo.User.getUsersResults(ctx)
 }
 
-func (s *Service) updateUserScore(user *User, score int) error {
+func (s *Service) updateUserScore(ctx context.Context, user *User, score int) error {
 	// Update the user's score
 	user.Score = score
 
 	// Call the repository method to save the updated user information
-	if err := s.repo.User.updateUser(user); err != nil {
+	if err := s.repo.User.updateUser(ctx, user); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Service) findQuestionByID(id int) *MultipleChoiceQuestion {
-	return s.repo.Quiz.findQuestionByID(id)
+func (s *Service) findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
+	return s.repo.Quiz.findQuestionByID(ctx, id)
 }
 
-func (s *Service) calculateUserPercent(user []User, score int) float64 {
+func (s *Service) calculateUserPercent(ctx context.Context, user []User, score int) float64 {
 	var betterUsers int
 	for _, u := range user {
 		if u.Score > score {
@@ -129,11 +131,11 @@ func (s *Service) calculateUserPercent(user []User, score int) float64 {
 	return percentile
 }
 
-func (s *Service) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
-	return s.repo.Quiz.processUserAnswers(userAnswers, user)
+func (s *Service) processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error) {
+	return s.repo.Quiz.processUserAnswers(ctx, userAnswers, user)
 }
 
-func (u *User) hasAnswered(questionID int) bool {
+func (u *User) hasAnswered(ctx context.Context, questionID int) bool {
 	for _, ans := range u.Answers {
 		if ans.QuestionID == questionID {
 			return true

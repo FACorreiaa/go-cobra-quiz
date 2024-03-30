@@ -5,15 +5,18 @@ lint: ## Runs linter for .go files
 clean:
 	rm -rf ./build
 
-#critic:
-#	gocritic check -enableAll ./...
-#
+critic:
+	gocritic check -enableAll ./...
+
 #security:
 #	gosec ./...
 
-test: clean lint
+go-test:
+	go test -v ./...
+
+test: clean critic lint
 	go test -v -timeout 30s -coverprofile=cover.out -cover ./...
 	go tool cover -func=cover.out
 
 bench:
-	go test -bench .
+	go test -bench ./...

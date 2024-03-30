@@ -13,42 +13,48 @@ import (
 
 type Handler struct {
 	service *ServiceStore
+	ctx     context.Context
 }
 
+// type ctxKey struct{}
+
 func NewHandler(s *ServiceStore) *Handler {
-	return &Handler{service: s}
+	return &Handler{
+		service: s,
+		ctx:     context.Background(),
+	}
 }
 
 func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 	var user User
 	var session Session
 
-	user, err := h.service.User.generateUserID(user)
+	session, err := h.service.Session.generateSessionID(h.ctx, session)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = h.service.User.createUser(user)
+	err = h.service.User.createUser(h.ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session, err = h.service.Session.generateSessionID(session)
+	user, err = h.service.User.generateUserID(h.ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), "sessionID", session.ID)
+	//ctx := context.WithValue(r.Context(), ctxKey{}, session.ID)
 
 	response := struct {
 		UserID    uuid.UUID `json:"user_id"`
 		SessionID uuid.UUID `json:"session_id"`
 	}{UserID: user.ID, SessionID: session.ID}
 
-	h.SetName(w, r.WithContext(ctx))
+	//h.SetName(w, r.WithContext(ctx))
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
@@ -57,7 +63,6 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	userIDParam := chi.URLParam(r, "user_id")
 	userID, err := uuid.Parse(userIDParam)
-	sessionID := r.Context().Value("sessionID").(uuid.UUID)
 
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -78,19 +83,17 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.User.updateUserName(userID, newName.Name); err != nil {
+	if err := h.service.User.updateUserName(h.ctx, userID, newName.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	response := struct {
-		SessionID uuid.UUID `json:"session_id"`
-		UserID    uuid.UUID `json:"user_id"`
-		Username  string    `json:"username"`
+		UserID   uuid.UUID `json:"user_id"`
+		Username string    `json:"username"`
 	}{
-		SessionID: sessionID,
-		UserID:    userID,
-		Username:  newName.Name,
+		UserID:   userID,
+		Username: newName.Name,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -112,30 +115,30 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-	user, err := h.service.User.getUserByID(userID)
+	user, err := h.service.User.getUserByID(h.ctx, userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	score, correctAnswers, err := h.service.Quiz.processUserAnswers(userAnswers, user)
+	score, correctAnswers, err := h.service.Quiz.processUserAnswers(h.ctx, userAnswers, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.service.User.updateUserScore(user, score); err != nil {
+	if err := h.service.User.updateUserScore(h.ctx, user, score); err != nil {
 		http.Error(w, "Failed to save user information", http.StatusInternalServerError)
 		return
 	}
 
-	usersWithAnswers, err := h.service.Ranking.getUsersResults()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults(h.ctx)
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
 	}
 
-	percentile := h.service.User.calculateUserPercent(usersWithAnswers, score)
+	percentile := h.service.User.calculateUserPercent(h.ctx, usersWithAnswers, score)
 	percentileMessage := fmt.Sprintf("You are better than %.2f%% of users who already submitted their quiz", percentile)
 
 	response := struct {
@@ -155,7 +158,7 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.Ranking.getUsersResults()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults(h.ctx)
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
@@ -178,7 +181,7 @@ func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.Ranking.getUsersResults()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults(h.ctx)
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return

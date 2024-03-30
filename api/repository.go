@@ -1,7 +1,7 @@
 package api
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"strconv"
 
@@ -21,17 +21,17 @@ func NewUserRepository() *UserRepository {
 }
 
 type UserServiceRepository interface {
-	generateUserID(user User) (User, error)
-	generateSessionID(session Session) (Session, error)
-	getUserByID(id uuid.UUID) (*User, error)
-	getUsersResults() ([]User, error)
-	updateUser(user *User) error
-	createUser(user User) error
+	generateUserID(ctx context.Context, user User) (User, error)
+	generateSessionID(ctx context.Context, session Session) (Session, error)
+	getUserByID(ctx context.Context, id uuid.UUID) (*User, error)
+	getUsersResults(ctx context.Context) ([]User, error)
+	updateUser(ctx context.Context, user *User) error
+	createUser(ctx context.Context, user User) error
 }
 
 type QuizServiceRepository interface {
-	findQuestionByID(id int) *MultipleChoiceQuestion
-	processUserAnswers(userAnswers map[string]string, user *User) (int, int, error)
+	findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
+	processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
 }
 
 type RepositoryStore struct {
@@ -45,19 +45,19 @@ func NewRepositoryStore() *RepositoryStore {
 	}
 }
 
-func (r *UserRepository) generateUserID(user User) (User, error) {
+func (r *UserRepository) generateUserID(ctx context.Context, user User) (User, error) {
 	// Save the user in the repository
 	user.ID = uuid.New()
 	return user, nil
 }
 
-func (r *UserRepository) generateSessionID(session Session) (Session, error) {
+func (r *UserRepository) generateSessionID(ctx context.Context, session Session) (Session, error) {
 	// Save the user in the repository
 	session.ID = uuid.New()
 	return session, nil
 }
 
-func (r *UserRepository) getUserByID(id uuid.UUID) (*User, error) {
+func (r *UserRepository) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	user, ok := r.users[id]
 	if !ok {
 		return nil, fmt.Errorf("user not found")
@@ -66,7 +66,7 @@ func (r *UserRepository) getUserByID(id uuid.UUID) (*User, error) {
 	return &userCopy, nil
 }
 
-func (r *UserRepository) getUsersResults() ([]User, error) {
+func (r *UserRepository) getUsersResults(ctx context.Context) ([]User, error) {
 	var users []User
 	for _, u := range r.users {
 		users = append(users, *u)
@@ -74,7 +74,7 @@ func (r *UserRepository) getUsersResults() ([]User, error) {
 	return users, nil
 }
 
-func (r *UserRepository) updateUser(user *User) error {
+func (r *UserRepository) updateUser(ctx context.Context, user *User) error {
 	_, ok := r.users[user.ID]
 	if !ok {
 		return fmt.Errorf("user not found")
@@ -83,7 +83,7 @@ func (r *UserRepository) updateUser(user *User) error {
 	return nil
 }
 
-func (r *UserRepository) createUser(user User) error {
+func (r *UserRepository) createUser(ctx context.Context, user User) error {
 	// Check if the user already exists
 	_, ok := r.users[user.ID]
 	if ok {
@@ -96,21 +96,21 @@ func (r *UserRepository) createUser(user User) error {
 	return nil
 }
 
-func (r *UserRepository) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
+func (r *UserRepository) processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error) {
 	var score, correctAnswers int
 	for id, answer := range userAnswers {
 		questionID, err := strconv.Atoi(id)
 		if err != nil {
 			return 0, 0, fmt.Errorf("invalid question ID: %v", err)
 		}
-		question := r.findQuestionByID(questionID)
+		question := r.findQuestionByID(ctx, questionID)
 		if question == nil {
 			return 0, 0, fmt.Errorf("question not found")
 		}
-		if user.hasAnswered(question.ID) {
-			return 0, 0, errors.New("user has already answered this question")
+		if user.hasAnswered(ctx, question.ID) {
+			return 0, 0, fmt.Errorf("user has already answered this question")
 		}
-		if answer == question.CorrectAns { // Check if user's answer matches the correct answer
+		if answer == question.CorrectAns {
 			correctAnswers++
 		}
 		user.Answers = append(user.Answers, Answer{QuestionID: question.ID, Answer: answer})
@@ -119,7 +119,7 @@ func (r *UserRepository) processUserAnswers(userAnswers map[string]string, user 
 	return score, correctAnswers, nil
 }
 
-func (r *UserRepository) findQuestionByID(id int) *MultipleChoiceQuestion {
+func (r *UserRepository) findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
 	for _, q := range MultipleChoiceQuestions {
 		if q.ID == id {
 			return &q

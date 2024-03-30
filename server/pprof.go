@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	// nolint:gosec,G108
+	// nolint:gosec,G108 allow pprof clear inst
 	_ "net/http/pprof"
 )
 

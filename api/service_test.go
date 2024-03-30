@@ -24,8 +24,8 @@ func (m *MockUserRepository) generateUserID(user User) (User, error) {
 }
 
 func (m *MockUserRepository) generateSessionID(session Session) (Session, error) {
-	args := m.Called(session)
-	return args.Get(0).(Session), args.Error(1)
+	sessionID, err := m.Called(session).Get(0).(Session), m.Called(session).Error(1)
+	return sessionID, err
 }
 
 func (m *MockUserRepository) getUserByID(id uuid.UUID) (*User, error) {
@@ -59,4 +59,30 @@ func TestUserService_CreateUser(t *testing.T) {
 
 	assert.NoError(t, err)
 	repoMock.AssertExpectations(t)
+}
+
+func TestUpdateUserName_ValidName(t *testing.T) {
+	repoMock := new(MockUserRepository)
+
+	userID := uuid.New()
+	user := &User{ID: userID}
+	repoMock.On("getUserByID", userID).Return(user, nil)
+
+	repoMock.On("updateUser", user).Return(nil)
+
+	userService := &Service{
+		repo: &RepositoryStore{
+			User: repoMock,
+		},
+	}
+
+	newName := "newName"
+	err := userService.updateUserName(userID, newName)
+
+	assert.NoError(t, err)
+
+	assert.Equal(t, newName, user.Name)
+	assert.NotEqualValues(t, 123, user.Name)
+
+	repoMock.AssertCalled(t, "updateUser", user)
 }
