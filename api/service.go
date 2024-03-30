@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"time"
 
 	"context"
 
@@ -69,11 +70,11 @@ func (s *Service) generateSessionID(ctx context.Context, session Session) (Sessi
 }
 
 func (s *Service) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
-	return s.repo.User.getUserByID(ctx, id)
+	return s.repo.User.getUserByID(id)
 }
 
 func (s *Service) updateUserName(ctx context.Context, userID uuid.UUID, newName string) error {
-	user, err := s.repo.User.getUserByID(ctx, userID)
+	user, err := s.repo.User.getUserByID(userID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve user: %v", err)
 	}
@@ -136,6 +137,9 @@ func (s *Service) processUserAnswers(ctx context.Context, userAnswers map[string
 }
 
 func (u *User) hasAnswered(ctx context.Context, questionID int) bool {
+	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
 	for _, ans := range u.Answers {
 		if ans.QuestionID == questionID {
 			return true

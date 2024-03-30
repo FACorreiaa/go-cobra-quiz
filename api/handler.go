@@ -18,10 +18,10 @@ type Handler struct {
 
 // type ctxKey struct{}
 
-func NewHandler(s *ServiceStore) *Handler {
+func NewHandler(ctx context.Context, s *ServiceStore) *Handler {
 	return &Handler{
+		ctx:     ctx,
 		service: s,
-		ctx:     context.Background(),
 	}
 }
 
@@ -47,7 +47,7 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//ctx := context.WithValue(r.Context(), ctxKey{}, session.ID)
+	//ctx := context.WithValue(r.Context(), "session_id", session.ID)
 
 	response := struct {
 		UserID    uuid.UUID `json:"user_id"`
@@ -63,7 +63,7 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	userIDParam := chi.URLParam(r, "user_id")
 	userID, err := uuid.Parse(userIDParam)
-
+	//sessionID := h.ctx.Value("session_id").(uuid.UUID)
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -13,33 +14,33 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) createUser(user User) error {
-	args := m.Called(user)
+func (m *MockUserRepository) createUser(ctx context.Context, user User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) generateUserID(user User) (User, error) {
-	args := m.Called(user)
+func (m *MockUserRepository) generateUserID(ctx context.Context, user User) (User, error) {
+	args := m.Called(ctx, user)
 	return args.Get(0).(User), args.Error(1)
 }
 
-func (m *MockUserRepository) generateSessionID(session Session) (Session, error) {
-	sessionID, err := m.Called(session).Get(0).(Session), m.Called(session).Error(1)
+func (m *MockUserRepository) generateSessionID(ctx context.Context, session Session) (Session, error) {
+	sessionID, err := m.Called(ctx, session).Get(0).(Session), m.Called(session).Error(1)
 	return sessionID, err
 }
 
-func (m *MockUserRepository) getUserByID(id uuid.UUID) (*User, error) {
-	args := m.Called(id)
+func (m *MockUserRepository) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
+	args := m.Called(ctx, id)
 	return args.Get(0).(*User), args.Error(1)
 }
 
-func (m *MockUserRepository) getUsersResults() ([]User, error) {
-	args := m.Called()
+func (m *MockUserRepository) getUsersResults(ctx context.Context) ([]User, error) {
+	args := m.Called(ctx)
 	return args.Get(0).([]User), args.Error(1)
 }
 
-func (m *MockUserRepository) updateUser(user *User) error {
-	args := m.Called(user)
+func (m *MockUserRepository) updateUser(ctx context.Context, user *User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
@@ -55,7 +56,7 @@ func TestUserService_CreateUser(t *testing.T) {
 		},
 	}
 
-	err := userService.createUser(user)
+	err := userService.createUser(context.Background(), user)
 
 	assert.NoError(t, err)
 	repoMock.AssertExpectations(t)
@@ -77,7 +78,7 @@ func TestUpdateUserName_ValidName(t *testing.T) {
 	}
 
 	newName := "newName"
-	err := userService.updateUserName(userID, newName)
+	err := userService.updateUserName(context.Background(), userID, newName)
 
 	assert.NoError(t, err)
 
