@@ -103,7 +103,7 @@ func (s *Service) updateUserScore(user *User, score int) error {
 }
 
 func (s *Service) findQuestionByID(id int) *MultipleChoiceQuestion {
-	return s.repo.Quiz.findQuestionByID(id)
+	return s.repo.User.findQuestionByID(id)
 }
 
 func (s *Service) calculateUserPercent(user []User, score int) float64 {
@@ -130,7 +130,7 @@ func (s *Service) calculateUserPercent(user []User, score int) float64 {
 }
 
 func (s *Service) processUserAnswers(userAnswers map[string]string, user *User) (int, int, error) {
-	return s.repo.Quiz.processUserAnswers(userAnswers, user)
+	return s.repo.User.processUserAnswers(userAnswers, user)
 }
 
 func (u *User) hasAnswered(questionID int) bool {

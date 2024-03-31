@@ -12,11 +12,12 @@ import (
 )
 
 type Handler struct {
+	ctx     context.Context
 	service *ServiceStore
 }
 
-func NewHandler(s *ServiceStore) *Handler {
-	return &Handler{service: s}
+func NewHandler(ctx context.Context, s *ServiceStore) *Handler {
+	return &Handler{ctx: ctx, service: s}
 }
 
 func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
@@ -41,14 +42,14 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), "sessionID", session.ID)
+	//ctx := context.WithValue(r.Context(), "sessionID", session.ID)
 
 	response := struct {
 		UserID    uuid.UUID `json:"user_id"`
 		SessionID uuid.UUID `json:"session_id"`
 	}{UserID: user.ID, SessionID: session.ID}
 
-	h.SetName(w, r.WithContext(ctx))
+	//h.SetName(w, r.WithContext(ctx))
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
@@ -57,7 +58,7 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	userIDParam := chi.URLParam(r, "user_id")
 	userID, err := uuid.Parse(userIDParam)
-	sessionID := r.Context().Value("sessionID").(uuid.UUID)
+	//sessionID := r.Context().Value("sessionID").(uuid.UUID)
 
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -84,13 +85,13 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := struct {
-		SessionID uuid.UUID `json:"session_id"`
-		UserID    uuid.UUID `json:"user_id"`
-		Username  string    `json:"username"`
+		//SessionID uuid.UUID `json:"session_id"`
+		UserID   uuid.UUID `json:"user_id"`
+		Username string    `json:"username"`
 	}{
-		SessionID: sessionID,
-		UserID:    userID,
-		Username:  newName.Name,
+		//SessionID: sessionID,
+		UserID:   userID,
+		Username: newName.Name,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -99,7 +100,6 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
-
 	var userAnswers map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&userAnswers); err != nil {
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)

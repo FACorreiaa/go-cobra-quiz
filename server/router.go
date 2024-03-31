@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+
 	"github.com/FACorreiaa/go-cobra-quiz/api"
 
 	"github.com/go-chi/chi/v5"
@@ -8,7 +10,8 @@ import (
 
 func Router(s *api.ServiceStore) *chi.Mux {
 	// could have just stayed with 1.22 router but used chi group routing
-	h := api.NewHandler(s)
+	ctx := context.Background()
+	h := api.NewHandler(ctx, s)
 
 	r := chi.NewRouter()
 

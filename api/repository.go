@@ -27,16 +27,12 @@ type UserServiceRepository interface {
 	getUsersResults() ([]User, error)
 	updateUser(user *User) error
 	createUser(user User) error
-}
-
-type QuizServiceRepository interface {
 	findQuestionByID(id int) *MultipleChoiceQuestion
 	processUserAnswers(userAnswers map[string]string, user *User) (int, int, error)
 }
 
 type RepositoryStore struct {
 	User UserServiceRepository
-	Quiz QuizServiceRepository
 }
 
 func NewRepositoryStore() *RepositoryStore {
