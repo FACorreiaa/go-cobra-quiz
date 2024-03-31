@@ -30,13 +30,13 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.User.createUser(user)
+	err = h.service.User.createUser(h.ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session, err = h.service.Session.generateSessionID(session)
+	session, err = h.service.Session.generateSessionID(h.ctx, session)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -79,7 +79,7 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.User.updateUserName(userID, newName.Name); err != nil {
+	if err := h.service.User.updateUserName(h.ctx, userID, newName.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -112,30 +112,30 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
-	user, err := h.service.User.getUserByID(userID)
+	user, err := h.service.User.getUserByID(h.ctx, userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	score, correctAnswers, err := h.service.Quiz.processUserAnswers(userAnswers, user)
+	score, correctAnswers, err := h.service.Quiz.processUserAnswers(h.ctx, userAnswers, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.service.User.updateUserScore(user, score); err != nil {
+	if err := h.service.User.updateUserScore(h.ctx, user, score); err != nil {
 		http.Error(w, "Failed to save user information", http.StatusInternalServerError)
 		return
 	}
 
-	usersWithAnswers, err := h.service.Ranking.getUsersResults()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults(h.ctx)
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
 	}
 
-	percentile := h.service.User.calculateUserPercent(usersWithAnswers, score)
+	percentile := h.service.User.calculateUserPercent(h.ctx, usersWithAnswers, score)
 	percentileMessage := fmt.Sprintf("You are better than %.2f%% of users who already submitted their quiz", percentile)
 
 	response := struct {
@@ -155,7 +155,7 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.Ranking.getUsersResults()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults(h.ctx)
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
@@ -178,7 +178,7 @@ func (h *Handler) GetAllScores(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
-	usersWithAnswers, err := h.service.Ranking.getUsersResults()
+	usersWithAnswers, err := h.service.Ranking.getUsersResults(h.ctx)
 	if err != nil {
 		http.Error(w, "Failed to get users with answers", http.StatusInternalServerError)
 		return
