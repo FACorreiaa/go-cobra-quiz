@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -29,7 +30,7 @@ type RankingService interface {
 
 type UserService interface {
 	createUser(user User) error
-	generateUserID(user User) (User, error)
+	generateUserID(ctx context.Context, user User) (User, error)
 	getUserByID(id uuid.UUID) (*User, error)
 	updateUserName(userID uuid.UUID, newName string) error
 	updateUserScore(user *User, score int) error
@@ -58,8 +59,8 @@ func (s *Service) createUser(user User) error {
 	return s.repo.User.createUser(user)
 }
 
-func (s *Service) generateUserID(user User) (User, error) {
-	return s.repo.User.generateUserID(user)
+func (s *Service) generateUserID(ctx context.Context, user User) (User, error) {
+	return s.repo.User.generateUserID(ctx, user)
 }
 
 func (s *Service) generateSessionID(session Session) (Session, error) {

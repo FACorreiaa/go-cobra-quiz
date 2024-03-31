@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -21,7 +22,7 @@ func NewUserRepository() *UserRepository {
 }
 
 type UserServiceRepository interface {
-	generateUserID(user User) (User, error)
+	generateUserID(ctx context.Context, user User) (User, error)
 	generateSessionID(session Session) (Session, error)
 	getUserByID(id uuid.UUID) (*User, error)
 	getUsersResults() ([]User, error)
@@ -41,7 +42,7 @@ func NewRepositoryStore() *RepositoryStore {
 	}
 }
 
-func (r *UserRepository) generateUserID(user User) (User, error) {
+func (r *UserRepository) generateUserID(ctx context.Context, user User) (User, error) {
 	// Save the user in the repository
 	user.ID = uuid.New()
 	return user, nil

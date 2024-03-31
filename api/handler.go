@@ -24,7 +24,7 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 	var user User
 	var session Session
 
-	user, err := h.service.User.generateUserID(user)
+	user, err := h.service.User.generateUserID(h.ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
