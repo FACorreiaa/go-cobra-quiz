@@ -19,12 +19,12 @@ func (m *MockUserRepository) createUser(ctx context.Context, user User) error {
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) generateUserID(ctx context.Context, user User) (User, error) {
+func (m *MockUserRepository) createUserID(ctx context.Context, user User) (User, error) {
 	args := m.Called(ctx, user)
 	return args.Get(0).(User), args.Error(1)
 }
 
-func (m *MockUserRepository) generateSessionID(ctx context.Context, session Session) (Session, error) {
+func (m *MockUserRepository) createSessionID(ctx context.Context, session Session) (Session, error) {
 	sessionID, err := m.Called(ctx, session).Get(0).(Session), m.Called(session).Error(1)
 	return sessionID, err
 }

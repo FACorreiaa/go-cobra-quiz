@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 )
@@ -18,11 +19,11 @@ func NewService(repo *RepositoryStore) *Service {
 }
 
 type SessionService interface {
-	generateSessionID(ctx context.Context, session Session) (Session, error)
+	createSessionID(ctx context.Context, session Session) (Session, error)
 }
 
 type QuizService interface {
-	findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
+	getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
 	processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
 }
 
@@ -32,7 +33,7 @@ type RankingService interface {
 
 type UserService interface {
 	createUser(ctx context.Context, user User) error
-	generateUserID(ctx context.Context, user User) (User, error)
+	createUserID(ctx context.Context, user User) (User, error)
 	getUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	updateUserName(ctx context.Context, userID uuid.UUID, newName string) error
 	updateUserScore(ctx context.Context, user *User, score int) error
@@ -61,20 +62,25 @@ func (s *Service) createUser(ctx context.Context, user User) error {
 	return s.repo.User.createUser(ctx, user)
 }
 
-func (s *Service) generateUserID(ctx context.Context, user User) (User, error) {
-	return s.repo.User.generateUserID(ctx, user)
+func (s *Service) createUserID(ctx context.Context, user User) (User, error) {
+	return s.repo.User.createUserID(ctx, user)
 }
 
-func (s *Service) generateSessionID(ctx context.Context, session Session) (Session, error) {
-	return s.repo.User.generateSessionID(ctx, session)
+func (s *Service) createSessionID(ctx context.Context, session Session) (Session, error) {
+	return s.repo.User.createSessionID(ctx, session)
 }
 
 func (s *Service) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
-	return s.repo.User.getUserByID(id)
+	user, err := s.repo.User.getUserByID(ctx, id)
+	if err != nil {
+		slog.Error("failed to retrieve user: %v", err)
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *Service) updateUserName(ctx context.Context, userID uuid.UUID, newName string) error {
-	user, err := s.repo.User.getUserByID(userID)
+	user, err := s.repo.User.getUserByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve user: %v", err)
 	}
@@ -105,8 +111,8 @@ func (s *Service) updateUserScore(ctx context.Context, user *User, score int) er
 	return nil
 }
 
-func (s *Service) findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
-	return s.repo.Quiz.findQuestionByID(ctx, id)
+func (s *Service) getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
+	return s.repo.Quiz.getQuestionByID(ctx, id)
 }
 
 func (s *Service) calculateUserPercent(ctx context.Context, user []User, score int) float64 {
@@ -136,6 +142,7 @@ func (s *Service) processUserAnswers(ctx context.Context, userAnswers map[string
 	return s.repo.Quiz.processUserAnswers(ctx, userAnswers, user)
 }
 
+// hasAnswered validator
 func (u *User) hasAnswered(ctx context.Context, questionID int) bool {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()

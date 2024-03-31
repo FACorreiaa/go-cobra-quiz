@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 
@@ -29,7 +30,7 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 	var user User
 	var session Session
 
-	session, err := h.service.Session.generateSessionID(h.ctx, session)
+	session, err := h.service.Session.createSessionID(h.ctx, session)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -41,13 +42,15 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err = h.service.User.generateUserID(h.ctx, user)
+	user, err = h.service.User.createUserID(h.ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	//ctx := context.WithValue(r.Context(), "session_id", session.ID)
+
+	h.ctx = context.WithValue(h.ctx, "session_id", session.ID)
 
 	response := struct {
 		UserID    uuid.UUID `json:"user_id"`
@@ -63,7 +66,11 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	userIDParam := chi.URLParam(r, "user_id")
 	userID, err := uuid.Parse(userIDParam)
-	//sessionID := h.ctx.Value("session_id").(uuid.UUID)
+	log.Println("User ID from URL:", userID)
+
+	sessionID := h.ctx.Value("session_id").(uuid.UUID)
+	log.Println("Session ID:", sessionID)
+
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
@@ -83,7 +90,10 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.User.updateUserName(h.ctx, userID, newName.Name); err != nil {
+	ctx := context.WithValue(r.Context(), "user_id", userID)
+	ctx = context.WithValue(ctx, "session_id", sessionID)
+
+	if err := h.service.User.updateUserName(ctx, userID, newName.Name); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

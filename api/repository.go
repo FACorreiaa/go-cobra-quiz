@@ -22,16 +22,16 @@ func NewUserRepository() *UserRepository {
 }
 
 type UserServiceRepository interface {
-	generateUserID(ctx context.Context, user User) (User, error)
-	generateSessionID(ctx context.Context, session Session) (Session, error)
-	getUserByID(id uuid.UUID) (*User, error)
+	createUserID(ctx context.Context, user User) (User, error)
+	createSessionID(ctx context.Context, session Session) (Session, error)
+	getUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	getUsersResults(ctx context.Context) ([]User, error)
 	updateUser(ctx context.Context, user *User) error
 	createUser(ctx context.Context, user User) error
 }
 
 type QuizServiceRepository interface {
-	findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
+	getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
 	processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
 }
 
@@ -46,7 +46,7 @@ func NewRepositoryStore() *RepositoryStore {
 	}
 }
 
-func (r *UserRepository) generateUserID(ctx context.Context, user User) (User, error) {
+func (r *UserRepository) createUserID(ctx context.Context, user User) (User, error) {
 	// Save the user in the repository
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
@@ -55,7 +55,7 @@ func (r *UserRepository) generateUserID(ctx context.Context, user User) (User, e
 	return user, nil
 }
 
-func (r *UserRepository) generateSessionID(ctx context.Context, session Session) (Session, error) {
+func (r *UserRepository) createSessionID(ctx context.Context, session Session) (Session, error) {
 	// Save the user in the repository
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
@@ -64,7 +64,7 @@ func (r *UserRepository) generateSessionID(ctx context.Context, session Session)
 	return session, nil
 }
 
-func (r *UserRepository) getUserByID(id uuid.UUID) (*User, error) {
+func (r *UserRepository) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 
 	user, ok := r.users[id]
 	if !ok {
@@ -120,7 +120,7 @@ func (r *UserRepository) processUserAnswers(ctx context.Context, userAnswers map
 		if err != nil {
 			return 0, 0, fmt.Errorf("invalid question ID: %v", err)
 		}
-		question := r.findQuestionByID(ctx, questionID)
+		question := r.getQuestionByID(ctx, questionID)
 		if question == nil {
 			return 0, 0, fmt.Errorf("question not found")
 		}
@@ -136,7 +136,7 @@ func (r *UserRepository) processUserAnswers(ctx context.Context, userAnswers map
 	return score, correctAnswers, nil
 }
 
-func (r *UserRepository) findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
+func (r *UserRepository) getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 	defer cancel()
 
