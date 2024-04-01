@@ -130,7 +130,7 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	percentile := h.service.User.calculateUserPercent(h.ctx, usersWithAnswers, score)
-	percentileMessage := fmt.Sprintf("You are better than %.2f%% of users who already submitted their quiz", percentile)
+	percentileMessage := fmt.Sprintf("You are better than %.0f%% of users who already submitted their quiz", percentile)
 
 	response := QuestionsReply{
 		Score:          score,

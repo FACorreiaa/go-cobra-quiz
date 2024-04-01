@@ -4,10 +4,10 @@ dotenv: ".env/dev"
 server:
   addr: "localhost"
   port: "8080"
-  write_timeout: 10s
-  read_timeout: 10s
-  idle_timeout: 10s
-  graceful_timeout: 10s
+  write_timeout: 100s
+  read_timeout: 100s
+  idle_timeout: 100s
+  graceful_timeout: 100s
 cli:
   addr: "localhost"
   port: "4040"
