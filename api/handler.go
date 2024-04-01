@@ -213,5 +213,5 @@ func (h *Handler) GetQuestions(w http.ResponseWriter, r *http.Request) {
 
 	// Write the questions as JSON response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(questions)
+	_ = json.NewEncoder(w).Encode(questions)
 }
