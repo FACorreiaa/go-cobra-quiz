@@ -22,7 +22,10 @@ func Router(s *api.ServiceStore) *chi.Mux {
 		r.Get("/ranking", h.GetRanking)
 	})
 
-	r.Get("/quiz/list", h.GetAllScores)
+	r.Route("/quiz", func(r chi.Router) {
+		r.Get("/scores", h.GetAllScores)
+		r.Get("/list", h.GetQuestions)
+	})
 
 	return r
 }

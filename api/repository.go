@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -22,14 +23,14 @@ func NewUserRepository() *UserRepository {
 }
 
 type UserServiceRepository interface {
-	generateUserID(ctx context.Context, user User) (User, error)
-	generateSessionID(ctx context.Context, session Session) (Session, error)
+	createUserID(ctx context.Context, user User) (User, error)
+	createSessionID(ctx context.Context, session Session) (Session, error)
 	getUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	getUsersResults(ctx context.Context) ([]User, error)
 	updateUser(ctx context.Context, user *User) error
-	createUser(ctx context.Context, user User) error
-	findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
-	processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
+	getUser(ctx context.Context, user User) error
+	getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
+	createUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
 }
 
 type RepositoryStore struct {
@@ -42,28 +43,42 @@ func NewRepositoryStore() *RepositoryStore {
 	}
 }
 
-func (r *UserRepository) generateUserID(ctx context.Context, user User) (User, error) {
+func (r *UserRepository) createUserID(ctx context.Context, user User) (User, error) {
 	// Save the user in the repository
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	user.ID = uuid.New()
 	return user, nil
 }
 
-func (r *UserRepository) generateSessionID(ctx context.Context, session Session) (Session, error) {
-	// Save the user in the repository
+func (r *UserRepository) createSessionID(ctx context.Context, session Session) (Session, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	session.ID = uuid.New()
 	return session, nil
 }
 
 func (r *UserRepository) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	user, ok := r.users[id]
 	if !ok {
 		return nil, fmt.Errorf("user not found")
 	}
-	userCopy := *user
-	return &userCopy, nil
+	userResponse := User{
+		ID:   user.ID,
+		Name: user.Name,
+	}
+	return &userResponse, nil
 }
 
 func (r *UserRepository) getUsersResults(ctx context.Context) ([]User, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	var users []User
 	for _, u := range r.users {
 		users = append(users, *u)
@@ -72,6 +87,9 @@ func (r *UserRepository) getUsersResults(ctx context.Context) ([]User, error) {
 }
 
 func (r *UserRepository) updateUser(ctx context.Context, user *User) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	_, ok := r.users[user.ID]
 	if !ok {
 		return fmt.Errorf("user not found")
@@ -80,8 +98,10 @@ func (r *UserRepository) updateUser(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (r *UserRepository) createUser(ctx context.Context, user User) error {
-	// Check if the user already exists
+func (r *UserRepository) getUser(ctx context.Context, user User) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	_, ok := r.users[user.ID]
 	if ok {
 		return fmt.Errorf("user already exists")
@@ -93,30 +113,37 @@ func (r *UserRepository) createUser(ctx context.Context, user User) error {
 	return nil
 }
 
-func (r *UserRepository) processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error) {
+func (r *UserRepository) createUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	var score, correctAnswers int
 	for id, answer := range userAnswers {
 		questionID, err := strconv.Atoi(id)
 		if err != nil {
 			return 0, 0, fmt.Errorf("invalid question ID: %v", err)
 		}
-		question := r.findQuestionByID(ctx, questionID)
+		question := r.getQuestionByID(ctx, questionID)
 		if question == nil {
-			return 0, 0, fmt.Errorf("question not found")
+			return 0, 0, errors.New("question not found")
 		}
-		if user.hasAnswered(ctx, question.ID) {
+		if user.hasAnswered(question.ID) {
 			return 0, 0, errors.New("user has already answered this question")
 		}
-		if answer == question.CorrectAns { // Check if user's answer matches the correct answer
+		if answer == question.CorrectAns {
 			correctAnswers++
 		}
 		user.Answers = append(user.Answers, Answer{QuestionID: question.ID, Answer: answer})
 	}
+
 	score = correctAnswers * 10
 	return score, correctAnswers, nil
 }
 
-func (r *UserRepository) findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
+func (r *UserRepository) getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
 	for _, q := range MultipleChoiceQuestions {
 		if q.ID == id {
 			return &q

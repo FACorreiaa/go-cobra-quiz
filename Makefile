@@ -15,5 +15,7 @@ test: clean lint
 	go test -v -timeout 30s -coverprofile=cover.out -cover ./...
 	go tool cover -func=cover.out
 
+go-test:
+	go test -v ./...
 bench:
 	go test -bench .

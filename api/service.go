@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -16,12 +17,12 @@ func NewService(repo *RepositoryStore) *Service {
 }
 
 type SessionService interface {
-	generateSessionID(ctx context.Context, session Session) (Session, error)
+	createSessionID(ctx context.Context, session Session) (Session, error)
 }
 
 type QuizService interface {
-	findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
-	processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
+	getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion
+	createUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error)
 }
 
 type RankingService interface {
@@ -29,8 +30,8 @@ type RankingService interface {
 }
 
 type UserService interface {
-	createUser(ctx context.Context, user User) error
-	generateUserID(ctx context.Context, user User) (User, error)
+	getUser(ctx context.Context, user User) error
+	createUserID(ctx context.Context, user User) (User, error)
 	getUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	updateUserName(ctx context.Context, userID uuid.UUID, newName string) error
 	updateUserScore(ctx context.Context, user *User, score int) error
@@ -55,16 +56,25 @@ func NewServiceStore(repo *RepositoryStore) *ServiceStore {
 
 // Implementation would generally be on a different file
 
-func (s *Service) createUser(ctx context.Context, user User) error {
-	return s.repo.User.createUser(ctx, user)
+func (s *Service) getUser(ctx context.Context, user User) error {
+	if user.ID.String() == "" {
+		return errors.New("user id wasn't generated")
+	}
+	return s.repo.User.getUser(ctx, user)
 }
 
-func (s *Service) generateUserID(ctx context.Context, user User) (User, error) {
-	return s.repo.User.generateUserID(ctx, user)
+func (s *Service) createUserID(ctx context.Context, user User) (User, error) {
+	if user.ID.String() == "" {
+		return User{}, errors.New("no id found")
+	}
+	return s.repo.User.createUserID(ctx, user)
 }
 
-func (s *Service) generateSessionID(ctx context.Context, session Session) (Session, error) {
-	return s.repo.User.generateSessionID(ctx, session)
+func (s *Service) createSessionID(ctx context.Context, session Session) (Session, error) {
+	if session.ID.String() == "" {
+		return Session{}, errors.New("session id wasn't generated")
+	}
+	return s.repo.User.createSessionID(ctx, session)
 }
 
 func (s *Service) getUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
@@ -103,8 +113,8 @@ func (s *Service) updateUserScore(ctx context.Context, user *User, score int) er
 	return nil
 }
 
-func (s *Service) findQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
-	return s.repo.User.findQuestionByID(ctx, id)
+func (s *Service) getQuestionByID(ctx context.Context, id int) *MultipleChoiceQuestion {
+	return s.repo.User.getQuestionByID(ctx, id)
 }
 
 func (s *Service) calculateUserPercent(ctx context.Context, user []User, score int) float64 {
@@ -130,11 +140,14 @@ func (s *Service) calculateUserPercent(ctx context.Context, user []User, score i
 	return percentile
 }
 
-func (s *Service) processUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error) {
-	return s.repo.User.processUserAnswers(ctx, userAnswers, user)
+func (s *Service) createUserAnswers(ctx context.Context, userAnswers map[string]string, user *User) (int, int, error) {
+	if len(userAnswers) == 0 {
+		return 0, 0, nil
+	}
+	return s.repo.User.createUserAnswers(ctx, userAnswers, user)
 }
 
-func (u *User) hasAnswered(ctx context.Context, questionID int) bool {
+func (u *User) hasAnswered(questionID int) bool {
 	for _, ans := range u.Answers {
 		if ans.QuestionID == questionID {
 			return true

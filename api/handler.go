@@ -24,19 +24,19 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 	var user User
 	var session Session
 
-	user, err := h.service.User.generateUserID(h.ctx, user)
+	user, err := h.service.User.createUserID(h.ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = h.service.User.createUser(h.ctx, user)
+	err = h.service.User.getUser(h.ctx, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	session, err = h.service.Session.generateSessionID(h.ctx, session)
+	session, err = h.service.Session.createSessionID(h.ctx, session)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -44,10 +44,10 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 
 	//ctx := context.WithValue(r.Context(), "sessionID", session.ID)
 
-	response := struct {
-		UserID    uuid.UUID `json:"user_id"`
-		SessionID uuid.UUID `json:"session_id"`
-	}{UserID: user.ID, SessionID: session.ID}
+	response := CreateUser{
+		UserID:    user.ID,
+		SessionID: session.ID,
+	}
 
 	//h.SetName(w, r.WithContext(ctx))
 
@@ -58,7 +58,6 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 	userIDParam := chi.URLParam(r, "user_id")
 	userID, err := uuid.Parse(userIDParam)
-	//sessionID := r.Context().Value("sessionID").(uuid.UUID)
 
 	if err != nil {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -84,12 +83,7 @@ func (h *Handler) SetName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := struct {
-		//SessionID uuid.UUID `json:"session_id"`
-		UserID   uuid.UUID `json:"user_id"`
-		Username string    `json:"username"`
-	}{
-		//SessionID: sessionID,
+	response := UpdateUser{
 		UserID:   userID,
 		Username: newName.Name,
 	}
@@ -118,7 +112,7 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	score, correctAnswers, err := h.service.Quiz.processUserAnswers(h.ctx, userAnswers, user)
+	score, correctAnswers, err := h.service.Quiz.createUserAnswers(h.ctx, userAnswers, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -138,12 +132,7 @@ func (h *Handler) SubmitQuiz(w http.ResponseWriter, r *http.Request) {
 	percentile := h.service.User.calculateUserPercent(h.ctx, usersWithAnswers, score)
 	percentileMessage := fmt.Sprintf("You are better than %.2f%% of users who already submitted their quiz", percentile)
 
-	response := struct {
-		Score          int     `json:"score"`
-		CorrectAnswers int     `json:"correct_answers"`
-		Percentile     float64 `json:"percentile"`
-		Message        string  `json:"message"`
-	}{
+	response := QuestionsReply{
 		Score:          score,
 		CorrectAnswers: correctAnswers,
 		Percentile:     percentile,
@@ -188,18 +177,10 @@ func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
 		return usersWithAnswers[i].Score > usersWithAnswers[j].Score
 	})
 
-	var response []struct {
-		UserID   uuid.UUID `json:"user_id"`
-		Username string    `json:"username"`
-		Score    int       `json:"score"`
-	}
+	rank := make([]Ranking, 0)
 
 	for _, user := range usersWithAnswers {
-		response = append(response, struct {
-			UserID   uuid.UUID `json:"user_id"`
-			Username string    `json:"username"`
-			Score    int       `json:"score"`
-		}{
+		rank = append(rank, Ranking{
 			UserID:   user.ID,
 			Username: user.Name,
 			Score:    user.Score,
@@ -207,7 +188,7 @@ func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Serialize the response slice into JSON format
-	jsonResponse, err := json.Marshal(response)
+	jsonResponse, err := json.Marshal(rank)
 	if err != nil {
 		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
 		return
@@ -216,4 +197,21 @@ func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(jsonResponse)
+}
+
+func (h *Handler) GetQuestions(w http.ResponseWriter, r *http.Request) {
+	// Extract text and options from each question
+	var questions []map[string]interface{}
+	for _, q := range MultipleChoiceQuestions {
+		question := map[string]interface{}{
+			"id":       q.ID,
+			"question": q.Question,
+			"options":  q.Options,
+		}
+		questions = append(questions, question)
+	}
+
+	// Write the questions as JSON response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(questions)
 }
