@@ -25,6 +25,8 @@ var setuserCmd = &cobra.Command{
 }
 
 func setUsername(username string) {
+	serverAddress := getServerAddress()
+
 	userID := viper.Get("user_id")
 	if userID == "" {
 		log.Fatalln("User ID not found. Please run 'start' command first.")
@@ -42,7 +44,7 @@ func setUsername(username string) {
 	}
 
 	// TODO change hardcoded URL to env or yml
-	url := fmt.Sprintf("http://localhost:8080/session/set-name/%s", userID)
+	url := fmt.Sprintf(serverAddress+"/session/set-name/%s", userID)
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 	if err != nil {

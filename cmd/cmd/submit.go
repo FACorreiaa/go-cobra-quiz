@@ -34,6 +34,8 @@ var submitCmd = &cobra.Command{
 }
 
 func Submit(args []string) {
+	serverAddress := getServerAddress()
+
 	userID := viper.GetString("user_id")
 	if userID == "" {
 		log.Fatalln("User ID not found. Please run 'start' command first.")
@@ -53,7 +55,7 @@ func Submit(args []string) {
 	}
 
 	// Send POST request
-	url := fmt.Sprintf("http://localhost:8080/session/%s/submit-quiz", userID)
+	url := fmt.Sprintf(serverAddress+"/session/%s/submit-quiz", userID)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		log.Fatalf("Failed to submit quiz: %v\n", err)

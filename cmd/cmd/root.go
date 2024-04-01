@@ -4,10 +4,19 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )
+
+func getServerAddress() string {
+	_ = godotenv.Load()
+	host := os.Getenv("HOST")
+	port := os.Getenv("PORT")
+	return fmt.Sprintf("http://%s:%s", host, port)
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

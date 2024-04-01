@@ -27,7 +27,9 @@ type Question struct {
 }
 
 func getAllQuestions() {
-	resp, err := http.Get("http://localhost:8080/quiz/list")
+	serverAddress := getServerAddress()
+
+	resp, err := http.Get(serverAddress + "/quiz/list")
 	if err != nil {
 		fmt.Println("Failed to fetch questions:", err)
 		return
@@ -43,8 +45,7 @@ func getAllQuestions() {
 
 	// Print the questions
 	for _, q := range questions {
-		fmt.Printf("Question ID: %v\n", q.ID)
-		fmt.Printf("Question Text: %v\n", q.Text)
+		fmt.Printf("%v. Question: %v\n", q.ID, q.Text)
 		fmt.Println("Options:")
 		options := q.Opts
 		for _, option := range options {

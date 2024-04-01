@@ -27,7 +27,9 @@ var rankingCmd = &cobra.Command{
 }
 
 func getRanking() {
-	resp, err := http.Get("http://localhost:8080/session/ranking")
+	serverAddress := getServerAddress()
+
+	resp, err := http.Get(serverAddress + "/session/ranking")
 	if err != nil {
 		fmt.Println("Failed to fetch questions:", err)
 		return
