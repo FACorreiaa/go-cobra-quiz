@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
 )
@@ -119,6 +120,11 @@ func (s *Service) getQuestionByID(ctx context.Context, id int) *MultipleChoiceQu
 
 func (s *Service) calculateUserPercent(ctx context.Context, user []User, score int) float64 {
 	var betterUsers int
+
+	sort.Slice(user, func(i, j int) bool {
+		return user[i].Score > user[j].Score
+	})
+
 	for _, u := range user {
 		if u.Score > score {
 			betterUsers++
