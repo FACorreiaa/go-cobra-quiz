@@ -33,10 +33,8 @@ func InitConfig() (Config, error) {
 	v := viper.New()
 
 	v.AddConfigPath("configs")
-	v.AddConfigPath("/app/configs")
-
+	v.AddConfigPath("app/configs")
 	v.SetConfigName("config_dev")
-
 	fmt.Println("Configuration paths:", v.ConfigFileUsed())
 
 	if err := v.ReadInConfig(); err != nil {
