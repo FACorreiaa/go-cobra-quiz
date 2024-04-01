@@ -69,7 +69,6 @@ func Submit(args []string) {
 		log.Fatalf("Failed to decode response: %v\n", err)
 	}
 
-	// Print result
 	fmt.Println("Score:", q.Score)
 	fmt.Println("Correct answers:", q.CorrectAnswers)
 	fmt.Println("Percentile:", q.Percentile)
