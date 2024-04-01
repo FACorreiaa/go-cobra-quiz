@@ -200,18 +200,17 @@ func (h *Handler) GetRanking(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetQuestions(w http.ResponseWriter, r *http.Request) {
-	// Extract text and options from each question
-	var questions []map[string]interface{}
+	var questions []QuestionList
 	for _, q := range MultipleChoiceQuestions {
-		question := map[string]interface{}{
-			"id":       q.ID,
-			"question": q.Question,
-			"options":  q.Options,
+
+		question := QuestionList{
+			ID:       q.ID,
+			Question: q.Question,
+			Options:  q.Options,
 		}
 		questions = append(questions, question)
 	}
 
-	// Write the questions as JSON response
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(questions)
 }

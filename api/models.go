@@ -132,3 +132,9 @@ var MultipleChoiceQuestions = []MultipleChoiceQuestion{
 		Explanation: "New York Knicks play on Madison Square Garden (MSG)",
 	},
 }
+
+type QuestionList struct {
+	ID       int      `json:"id"`
+	Options  []string `json:"options"`
+	Question string   `json:"question"`
+}
