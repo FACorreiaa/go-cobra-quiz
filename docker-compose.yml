@@ -8,13 +8,14 @@ services:
     networks:
       - quiz
 
-#  cli:
-#    container_name: quiz-client
-#    build:
-#      context: ./cmd
-#      dockerfile: Dockerfile
-#    networks:
-#      - quiz
+  cli:
+    container_name: quiz-client
+    restart: always
+    build:
+      context: ./cmd
+      dockerfile: Dockerfile
+    networks:
+      - quiz
 
 networks:
   quiz:

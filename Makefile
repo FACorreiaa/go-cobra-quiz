@@ -1,4 +1,4 @@
-client_image = go-cobra-quiz-cli
+client_image = go-quiz-cli
 server_image = go-cobra-quiz-server
 user = a11199
 lint: ## Runs linter for .go files
@@ -34,12 +34,15 @@ bench:
 	go test -bench .
 
 up:
-	docker compose up --build
+	docker compose up -d
 
 down:
 	docker compose down
 	docker image rm ${client_image}
 	docker image rm ${server_image}
+
+build-client:
+	docker build -t ${client_image} -f ./cmd/Dockerfile .
 
 push-client:
 	docker push ${user}/${client_image}:latest

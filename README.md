@@ -8,8 +8,13 @@
 - With this structure the server is running inside the internal logic and CLI UI inside cmd
 - The service file contains a single service instance, which will cause problems if we want to change one of the repos. Ideally we would change this per feature, but for this use case I have put everything inside one handler, one service and one repository folder.
 - I pass ctx without needing it (for now). In case we plug a DB, to have an history of results, for example, the ctx is there to be used. But because its not used, lint will not pass successfully.
+
+# Run the API
+- make up
+
 TODO:
 - [ ] separate configs for env variables
 - [ ] Add more test coverage
 - [ ] Decouple NewService inside api/service implementation for each feature
 - [ ] Make github action linter pass.
+- [ ] Fix CLI on Docker compose

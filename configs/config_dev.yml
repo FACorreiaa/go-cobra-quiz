@@ -2,15 +2,15 @@ mode: "dev"
 dotenv: ".env/dev"
 
 server:
-  addr: "localhost"
+  addr: "0.0.0.0"
   port: "8080"
   write_timeout: 100s
   read_timeout: 100s
   idle_timeout: 100s
   graceful_timeout: 100s
 cli:
-  addr: "localhost"
+  addr: "0.0.0.0"
   port: "4040"
 pprof:
-  addr: "localhost"
+  addr: "0.0.0.0"
   port: "5050"

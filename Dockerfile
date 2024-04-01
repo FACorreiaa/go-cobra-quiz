@@ -15,6 +15,8 @@ WORKDIR /app
 
 COPY --from=builder /app/api .
 
+COPY ./configs /app/configs
+
 EXPOSE 8080
 
 CMD ["./api", "--config-source=file","--config-file=config/config_dev.yml"]
