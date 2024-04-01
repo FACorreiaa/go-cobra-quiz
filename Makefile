@@ -1,4 +1,4 @@
-client_image = go-quiz-cli
+client_image = go-cobra-quiz-client
 server_image = go-cobra-quiz-server
 user = a11199
 lint: ## Runs linter for .go files
@@ -52,3 +52,6 @@ pull-client:
 
 run-client:
 	docker run ${client_image}
+
+cli-run:
+	docker run go-cobra-quiz-cli $(COMMAND)

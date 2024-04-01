@@ -12,9 +12,23 @@
 # Run the API
 - make up
 
+# Run CLI
+docker run go-cobra-quiz-cli "your command here"
+or
+make cli-run COMMAND="your command here"
+
+
+## list of commands:
+- start
+- setuser
+- submit
+- list
+- ranking
+
+
 TODO:
-- [ ] separate configs for env variables
+- [ ] Fix CLI setname command
+- [ ] Prepare configs for env variables or deployments keys
 - [ ] Add more test coverage
 - [ ] Decouple NewService inside api/service implementation for each feature
 - [ ] Make github action linter pass.
-- [ ] Fix CLI on Docker compose

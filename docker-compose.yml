@@ -19,3 +19,5 @@ services:
 
 networks:
   quiz:
+    driver: bridge
+
