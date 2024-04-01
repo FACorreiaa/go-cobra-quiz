@@ -18,14 +18,8 @@ import (
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Args: cobra.ExactArgs(0),
+	Short: "Start session",
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		startSession()
 	},
@@ -62,9 +56,11 @@ func startSession() {
 }
 
 func init() {
-	viper.SetConfigName("config") // Name of the config file without extension
-	viper.AddConfigPath(".")      // Search the current directory for the config file
-	viper.SetConfigType("yaml")   // Use YAML format
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("/app/configs")
+	viper.AddConfigPath("app")
+	viper.SetConfigType("yaml")
 
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Error reading config file:", err)

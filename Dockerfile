@@ -5,15 +5,19 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . ./
+COPY . .
 
-RUN go build -v -o server
+RUN go build -v -o api
 
-FROM debian:bookworm-slim
-COPY --from=builder /app/server /app/server
+FROM golang:alpine
 
-CMD ["/app/server"]
+WORKDIR /app
 
+COPY --from=builder /app/api .
+
+EXPOSE 8080
+
+CMD ["./api", "--config-source=file","--config-file=config/config_dev.yml"]
 
 
 

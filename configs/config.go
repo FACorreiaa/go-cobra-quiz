@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/viper"
@@ -30,8 +31,13 @@ type Config struct {
 func InitConfig() (Config, error) {
 	var config Config
 	v := viper.New()
+
 	v.AddConfigPath("configs")
-	v.SetConfigName("config")
+	v.AddConfigPath("/app/configs")
+
+	v.SetConfigName("config_dev")
+
+	fmt.Println("Configuration paths:", v.ConfigFileUsed())
 
 	if err := v.ReadInConfig(); err != nil {
 		return config, err

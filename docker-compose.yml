@@ -5,18 +5,16 @@ services:
     build: .
     ports:
       - "8080:8080"
-    volumes:
-      - .:/usr/src/app
     networks:
       - quiz
 
-  cli:
-    container_name: quiz-client
-    build:
-      context: ./cmd
-      dockerfile: Dockerfile
-    networks:
-      - quiz
+#  cli:
+#    container_name: quiz-client
+#    build:
+#      context: ./cmd
+#      dockerfile: Dockerfile
+#    networks:
+#      - quiz
 
 networks:
   quiz:

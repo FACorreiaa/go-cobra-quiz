@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/FACorreiaa/go-cobra-quiz/api"
 	"github.com/FACorreiaa/go-cobra-quiz/configs"
+	"github.com/FACorreiaa/go-cobra-quiz/internal"
 )
 
 func Run(ctx context.Context) error {
@@ -16,8 +16,8 @@ func Run(ctx context.Context) error {
 		fmt.Printf("Error initializing config: %s", err)
 		panic(err)
 	}
-	repo := api.NewRepositoryStore()
-	service := api.NewServiceStore(repo)
+	repo := internal.NewRepositoryStore()
+	service := internal.NewServiceStore(repo)
 
 	srv := &http.Server{
 		Addr:              config.Server.Addr + ":" + config.Server.Port,

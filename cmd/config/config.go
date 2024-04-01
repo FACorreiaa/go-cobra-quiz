@@ -6,6 +6,8 @@ func InitConfig() error {
 	v := viper.New()
 	v.AddConfigPath("config")
 	v.AddConfigPath(".")
+	v.AddConfigPath("app/configs")
+	v.AddConfigPath("app")
 	v.SetConfigName("config")
 	v.SetConfigType("yaml")
 	v.AutomaticEnv()

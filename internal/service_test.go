@@ -1,7 +1,7 @@
 //go:build ignore
 // +build ignore
 
-package api
+package internal
 
 import (
 	"context"
