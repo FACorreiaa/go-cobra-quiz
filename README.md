@@ -25,6 +25,7 @@ make cli-run COMMAND="your command here"
 - list
 - ranking
 
+##
 
 TODO:
 - [ ] Fix CLI setname command

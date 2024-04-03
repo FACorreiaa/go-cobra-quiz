@@ -42,7 +42,9 @@ func (h *Handler) StartSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//ctx := context.WithValue(r.Context(), "sessionID", session.ID)
+	ctx := context.WithValue(r.Context(), "sessionID", session.ID)
+	sessionID := ctx.Value("sessionID").(uuid.UUID)
+	fmt.Println(sessionID)
 
 	response := CreateUser{
 		UserID:    user.ID,
